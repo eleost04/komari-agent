@@ -20,6 +20,7 @@ type report struct {
 	Network     networkReport     `json:"network"`
 	Connections connectionsReport `json:"connections"`
 	GPU         interface{}       `json:"gpu,omitempty"`
+	Battery     *batteryReport    `json:"battery,omitempty"`
 	Uptime      uint64            `json:"uptime"`
 	Process     int               `json:"process"`
 	Message     string            `json:"message"`
@@ -50,6 +51,12 @@ type networkReport struct {
 type connectionsReport struct {
 	TCP int `json:"tcp"`
 	UDP int `json:"udp"`
+}
+
+type batteryReport struct {
+	Level    int    `json:"level"`
+	Charging bool   `json:"charging"`
+	Status   string `json:"status"`
 }
 
 type gpuModelsReport struct {
@@ -111,6 +118,15 @@ func GenerateReport() []byte {
 	data.Uptime = uptime
 
 	data.Process = unit.ProcessCount()
+
+	// 电池电量监控 - 检测是否存在电池设备
+	if bat := unit.Battery(); bat != nil {
+		data.Battery = &batteryReport{
+			Level:    bat.Level,
+			Charging: bat.Charging,
+			Status:   bat.Status,
+		}
+	}
 
 	// GPU监控 - 根据标志决定详细程度
 	if flags.EnableGPU {
