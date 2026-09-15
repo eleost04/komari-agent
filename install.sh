@@ -47,6 +47,11 @@ install_dir_specified=false
 install_no_mirror=false # 关闭自动加速镜像
 service_user="${SUDO_USER:-$(id -un)}"
 user_service=false
+# 下载源仓库：指向本项目的 fork，而非官方仓库。
+github_repo="${KOMARI_GITHUB_REPO:-eleost04/komari-agent}"
+# 自有域名加速前缀（可选）。为空则直连上述仓库的 GitHub Releases。
+# 面板开启“自有域名加速”时会传入 --install-base-url。
+install_base_url=""
 
 # Detect OS
 os_type=$(uname -s)
@@ -96,6 +101,10 @@ while [ $# -gt 0 ]; do
             ;;
         --install-version)
             install_version="$2"
+            shift 2
+            ;;
+        --install-base-url)
+            install_base_url="$2"
             shift 2
             ;;
         --install-no-mirror) # 新增: 关闭自动加速镜像
@@ -322,7 +331,7 @@ log_info "Detected OS: ${GREEN}$os_name${NC}, Architecture: ${GREEN}$arch${NC}"
 file_name="komari-agent-${os_name}-${arch}"
 
 resolve_snapshot_version() {
-    snapshot_api_url="https://api.github.com/repos/komari-monitor/komari-agent/releases?per_page=100"
+    snapshot_api_url="https://api.github.com/repos/${github_repo}/releases?per_page=100"
     if [ -n "$github_proxy" ]; then
         snapshot_api_urls="${github_proxy}/${snapshot_api_url} ${snapshot_api_url}"
     else
@@ -381,12 +390,15 @@ else
     download_path="download/${version_to_install}"
 fi
 
-if [ -n "$github_proxy" ]; then
-    # Use proxy for GitHub releases
-    download_url="${github_proxy}/https://github.com/komari-monitor/komari-agent/releases/${download_path}/${file_name}"
+# 下载源：默认直连本项目 fork 的 GitHub Releases；
+# 传入 --install-base-url 时经自有域名前缀（由反代回源）。
+if [ -n "$install_base_url" ]; then
+    download_url="${install_base_url}/releases/${download_path}/${file_name}"
+elif [ -n "$github_proxy" ]; then
+    # 兼容原有 --install-ghproxy 前缀
+    download_url="${github_proxy}/https://github.com/${github_repo}/releases/${download_path}/${file_name}"
 else
-    # Direct access to GitHub releases
-    download_url="https://github.com/komari-monitor/komari-agent/releases/${download_path}/${file_name}"
+    download_url="https://github.com/${github_repo}/releases/${download_path}/${file_name}"
 fi
 
 log_step "Creating installation directory: ${GREEN}$target_dir${NC}"
@@ -397,7 +409,8 @@ fi
 
 # Download with automatic mirror fallback.
 # 直连失败自动依次尝试常见 GitHub 加速镜像, 可用 --install-no-mirror 关闭.
-if [ -n "$github_proxy" ] || [ "$install_no_mirror" = "true" ]; then
+# 自有域名前缀或已指定代理时不再追加镜像（镜像仅对 GitHub 域名有意义）。
+if [ -n "$github_proxy" ] || [ -n "$install_base_url" ] || [ "$install_no_mirror" = "true" ]; then
     download_urls="$download_url"
 else
     download_urls="
