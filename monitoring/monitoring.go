@@ -21,6 +21,7 @@ type report struct {
 	Connections connectionsReport `json:"connections"`
 	GPU         interface{}       `json:"gpu,omitempty"`
 	Battery     *batteryReport    `json:"battery,omitempty"`
+	Temperature *tempReport       `json:"temperature,omitempty"`
 	Uptime      uint64            `json:"uptime"`
 	Process     int               `json:"process"`
 	Message     string            `json:"message"`
@@ -57,6 +58,11 @@ type batteryReport struct {
 	Level    int    `json:"level"`
 	Charging bool   `json:"charging"`
 	Status   string `json:"status"`
+}
+
+type tempReport struct {
+	CPU     *float64 `json:"cpu,omitempty"`
+	Battery *float64 `json:"battery,omitempty"`
 }
 
 type gpuModelsReport struct {
@@ -125,6 +131,14 @@ func GenerateReport() []byte {
 			Level:    bat.Level,
 			Charging: bat.Charging,
 			Status:   bat.Status,
+		}
+	}
+
+	// 温度监控 - CPU/SoC 与电池温度（摄氏度）
+	if temp := unit.Temperature(); temp != nil {
+		data.Temperature = &tempReport{
+			CPU:     temp.CPU,
+			Battery: temp.Battery,
 		}
 	}
 
