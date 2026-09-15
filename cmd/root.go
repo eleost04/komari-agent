@@ -57,8 +57,12 @@ var RootCmd = &cobra.Command{
 		defer stop()
 
 		stopWarning := func() {}
-		if !flags.DisableWebSsh {
+		if flags.SecurityWarning && !flags.DisableWebSsh {
 			stopWarning = startSecurityWarning(stopCtx)
+		} else {
+			// 警告默认关闭：主动清理此前版本可能已写入的 MOTD / 通知遗留，
+			// 避免旧提示在关闭开关后永久残留。
+			removeSecurityWarning()
 		}
 		defer stopWarning()
 		go func() {
@@ -190,6 +194,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&flags.ConfigFile, "config", "", "Path to the configuration file")
 	RootCmd.PersistentFlags().BoolVar(&flags.DisableCompression, "disable-compression", false, "Disable v2 gzip/permessage-deflate compression")
 	RootCmd.PersistentFlags().StringVar(&flags.PreferIPVersion, "prefer-ip-version", "", "Prefer IP version for dashboard connections: 4 or 6")
+	RootCmd.PersistentFlags().BoolVar(&flags.SecurityWarning, "security-warning", false, "Show the remote-control security warning (Linux MOTD / Windows notification)")
 	RootCmd.PersistentFlags().ParseErrorsWhitelist.UnknownFlags = true
 }
 

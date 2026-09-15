@@ -28,6 +28,7 @@ type Config struct {
 	ConfigFile          string  `json:"config_file" env:"AGENT_CONFIG_FILE"`                       // JSON配置文件路径
 	DisableCompression  bool    `json:"disable_compression" env:"AGENT_DISABLE_COMPRESSION"`       // 禁用v2传输压缩
 	PreferIPVersion     string  `json:"prefer_ip_version" env:"AGENT_PREFER_IP_VERSION"`           // 面板连接优先使用的 IP 版本：4 或 6
+	SecurityWarning     bool    `json:"security_warning" env:"AGENT_SECURITY_WARNING"`             // 显示远程控制安全警告（Linux MOTD / Windows 通知），默认关闭
 
 }
 

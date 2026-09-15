@@ -26,6 +26,10 @@ func startSecurityWarning(ctx context.Context) func() {
 	return func() {}
 }
 
+// removeSecurityWarning 在 Windows 上无需清理：通知是瞬时的，
+// 快捷方式也会在展示后自动删除。
+func removeSecurityWarning() {}
+
 func warnWindowsSessions(ctx context.Context, warning securityWarning) {
 	// Keep service notifications in logged-in users' sessions, never in Session 0.
 	// 启用权限

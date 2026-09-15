@@ -48,6 +48,43 @@ func startSecurityWarning(ctx context.Context) func() {
 	return cleanup
 }
 
+// removeSecurityWarning 清除此前写入的远程控制安全警告，供关闭 warning 开关时调用。
+// 仅删除 Komari 自己写入的片段，保留管理员对 MOTD 的其他修改。
+func removeSecurityWarning() {
+	removeLegacyUpdateMOTDWarning(legacyUpdateMOTDPath)
+
+	original, err := readMOTD(linuxMOTDPath)
+	if err != nil {
+		log.Printf("[warn] could not read MOTD for cleanup: %v", err)
+		return
+	}
+	if !original.exists {
+		return
+	}
+	content, found, err := removeMOTDWarning(original.original)
+	if err != nil {
+		log.Printf("[warn] could not remove MOTD warning: %v", err)
+		return
+	}
+	if !found {
+		return
+	}
+	// 警告是唯一内容时直接删除文件，避免留下空文件；
+	// 否则写回删掉警告后的剩余内容。
+	if content == "" {
+		if err := os.Remove(original.target); err != nil && !os.IsNotExist(err) {
+			log.Printf("[warn] could not remove temporary MOTD: %v", err)
+		}
+		log.Printf("[warn] removed MOTD security warning")
+		return
+	}
+	if err := writeMOTD(original, []byte(content)); err != nil {
+		log.Printf("[warn] could not write cleaned MOTD: %v", err)
+		return
+	}
+	log.Printf("[warn] removed MOTD security warning")
+}
+
 func removeLegacyUpdateMOTDWarning(path string) {
 	data, err := os.ReadFile(path)
 	if os.IsNotExist(err) {
