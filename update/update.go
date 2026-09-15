@@ -19,8 +19,8 @@ import (
 )
 
 var (
-	CurrentVersion string = "0.0.1"
-	Repo           string = "komari-monitor/komari-agent"
+	CurrentVersion string = "1.5.1"
+	Repo           string = "eleost04/komari-agent"
 )
 
 const (
